@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Anime Clash - Jogo de Luta 3D Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            touch-action: manipulation;
+        }
+
+        #gameContainer {
+            width: 100%;
+            max-width: 500px;
+            height: 90vh;
+            background: #0f3460;
+            border-radius: 30px;
+            padding: 15px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 55%;
+            background: #1a1a2e;
+            border-radius: 20px;
+            overflow: hidden;
+            position: relative;
+            border: 3px solid #e94560;
+            box-shadow: inset 0 0 20px rgba(233, 69, 96, 0.3);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #health-bars {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            margin-bottom: 5px;
+        }
+
+        .health-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .health-bar-bg {
+            width: 90%;
+            height: 20px;
+            background: #333;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid #fff;
+        }
+
+        .health-bar {
+            height: 100%;
+            width: 100%;
+            transition: width 0.3s ease;
+        }
+
+        #p1-health {
+            background: linear-gradient(90deg, #00ff00, #00cc00);
+        }
+
+        #p2-health {
+            background: linear-gradient(90deg, #ff4444, #cc0000);
+        }
+
+        .character-name {
+            color: white;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            font-size: 16px;
+        }
+
+        #vs {
+            color: #e94560;
+            font-weight: bold;
+            font-size: 24px;
+            text-shadow: 0 0 10px #e94560;
+            padding: 0 15px;
+        }
+
+        #controls {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 20px;
+            margin-top: auto;
+        }
+
+        .control-row {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .control-btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(233, 69, 96, 0.9);
+            border: 3px solid white;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            cursor: pointer;
+            transition: all 0.1s ease;
+            touch-action: manipulation;
+            -webkit-touch-callout: none;
+        }
+
+        .control-btn:active {
+            transform: scale(0.9);
+            background: #ff6b81;
+            box-shadow: 0 0 20px #e94560;
+        }
+
+        .special-btn {
+            background: linear-gradient(145deg, #ffd700, #ffa500);
+            font-size: 20px;
+            color: #000;
+        }
+
+        #character-select {
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            margin-bottom: 10px;
+        }
+
+        .char-icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid #e94560;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .char-icon.selected {
+            transform: scale(1.2);
+            border-color: #ffd700;
+            box-shadow: 0 0 20px gold;
+        }
+
+        .char-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .char-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        #game-status {
+            text-align: center;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 0 0 10px #e94560;
+            margin: 5px 0;
+        }
+
+        #reset-btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 400px) {
+            .control-btn {
+                width: 60px;
+                height: 60px;
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+        <div id="character-select">
+            <div class="char-icon selected" data-char="yuji" id="char-yuji">
+                <div class="char-placeholder">Yuji</div>
+            </div>
+            <div class="char-icon" data-char="naruto" id="char-naruto">
+                <div class="char-placeholder">Naruto</div>
+            </div>
+            <div class="char-icon" data-char="goku" id="char-goku">
+                <div class="char-placeholder">Goku</div>
+            </div>
+        </div>
+
+        <div id="health-bars">
+            <div class="health-container">
+                <span class="character-name" id="p1-name">Yuji</span>
+                <div class="health-bar-bg">
+                    <div id="p1-health" class="health-bar" style="width: 100%"></div>
+                </div>
+            </div>
+            <div id="vs">VS</div>
+            <div class="health-container">
+                <span class="character-name" id="p2-name">Naruto</span>
+                <div class="health-bar-bg">
+                    <div id="p2-health" class="health-bar" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div id="canvas-container">
+            <canvas id="gameCanvas"></canvas>
+        </div>
+
+        <div id="game-status">Lute!</div>
+
+        <div id="controls">
+            <div class="control-row">
+                <button class="control-btn" id="btn-left">←</button>
+                <button class="control-btn" id="btn-right">→</button>
+                <button class="control-btn" id="btn-up">↑</button>
+                <button class="control-btn" id="btn-down">↓</button>
+            </div>
+            <div class="control-row">
+                <button class="control-btn" id="btn-punch">Soco</button>
+                <button class="control-btn" id="btn-kick">Chute</button>
+                <button class="control-btn special-btn" id="btn-special">Especial</button>
+            </div>
+            <button id="reset-btn">Reiniciar</button>
+        </div>
+    </div>
+
+    <script>
+        // Configuração do Canvas 3D
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Variáveis do jogo
+        let gameRunning = true;
+        let gameStatus = 'Lute!';
+        
+        // Personagens disponíveis
+        const characters = {
+            yuji: { name: 'Yuji', health: 100, maxHealth: 100, attack: 10, special: 25, color: '#ff4444' },
+            naruto: { name: 'Naruto', health: 100, maxHealth: 100, attack: 8, special: 30, color: '#ffaa00' },
+            goku: { name: 'Goku', health: 100, maxHealth: 100, attack: 12, special: 35, color: '#44aaff' }
+        };
+
+        // Jogadores
+        let player1 = { ...characters.yuji, x: 150, y: 200, width: 50, height: 80, isAttacking: false, attackTimer: 0 };
+        let player2 = { ...characters.naruto, x: 350, y: 200, width: 50, height: 80, isAttacking: false, attackTimer: 0 };
+
+        // Controles mobile
+        const controls = {
+            left: false,
+            right: false,
+            up: false,
+            down: false,
+            punch: false,
+            kick: false,
+            special: false
+        };
+
+        // Seleção de personagem
+        document.querySelectorAll('.char-icon').forEach(icon => {
+            icon.addEventListener('click', () => {
+                document.querySelectorAll('.char-icon').forEach(i => i.classList.remove('selected'));
+                icon.classList.add('selected');
+                
+                const char = icon.dataset.char;
+                if (icon.id.includes('char-yuji') || icon.id.includes('char-naruto') || icon.id.includes('char-goku')) {
+                    // Alterna entre os jogadores para demonstração
+                    if (!player1Selected) {
+                        player1 = { ...characters[char], x: 150, y: 200, width: 50, height: 80, isAttacking: false, attackTimer: 0 };
+                        document.getElementById('p1-name').textContent = characters[char].name;
+                        player1Selected = true;
+                    } else {
+                        player2 = { ...characters[char], x: 350, y: 200, width: 50, height: 80, isAttacking: false, attackTimer: 0 };
+                        document.getElementById('p2-name').textContent = characters[char].name;
+                        player1Selected = false;
+                    }
+                }
+            });
+        });
+
+        let player1Selected = true;
+
+        // Event listeners para controles touch
+        function setupControl(btnId, controlName) {
+            const btn = document.getElementById(btnId);
+            
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                controls[controlName] = true;
+            });
+            
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                controls[controlName] = false;
+            });
+            
+            btn.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+                controls[controlName] = true;
+            });
+            
+            btn.addEventListener('mouseup', (e) => {
+                e.preventDefault();
+                controls[controlName] = false;
+            });
+            
+            btn.addEventListener('mouseleave', (e) => {
+                controls[controlName] = false;
+            });
+        }
+
+        setupControl('btn-left', 'left');
+        setupControl('btn-right', 'right');
+        setupControl('btn-up', 'up');
+        setupControl('btn-down', 'down');
+        setupControl('btn-punch', 'punch');
+        setupControl('btn-kick', 'kick');
+        setupControl('btn-special', 'special');
+
+        // Botão reiniciar
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            player1.health = player1.maxHealth;
+            player2.health = player2.maxHealth;
+            player1.x = 150;
+            player2.x = 350;
+            gameStatus = 'Lute!';
+            updateHealthBars();
+        });
+
+        // Atualizar barras de vida
+        function updateHealthBars() {
+            document.getElementById('p1-health').style.width = Math.max(0, (player1.health / player1.maxHealth) * 100) + '%';
+            document.getElementById('p2-health').style.width = Math.max(0, (player2.health / player2.maxHealth) * 100) + '%';
+        }
+
+        // Função de ataque
+        function attack(attacker, defender, damage) {
+            if (attacker.isAttacking) return;
+            
+            attacker.isAttacking = true;
+            attacker.attackTimer = 10;
+            
+            // Verifica distância para o ataque
+            const distance = Math.abs(attacker.x - defender.x);
+            if (distance < 80) {
+                defender.health = Math.max(0, defender.health - damage);
+                updateHealthBars();
+                
+                // Efeito visual do ataque
+                createHitEffect(defender.x, defender.y);
+                
+                // Verifica vencedor
+                if (defender.health <= 0) {
+                    gameStatus = attacker === player1 ? 'Jogador 1 Venceu!' : 'Jogador 2 Venceu!';
+                }
+            }
+        }
+
+        // Efeito de impacto
+        function createHitEffect(x, y) {
+            // Implementação simples de efeito visual
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, 30, 0, Math.PI * 2);
+            ctx.strokeStyle = '#ffff00';
+            ctx.lineWidth = 5;
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // Desenhar personagem 3D (simulado com gradientes)
+        function drawCharacter(char, isPlayer1) {
+            const x = char.x;
+            const y = char.y;
+            const width = char.width;
+            const height = char.height;
+            
+            // Corpo 3D com gradiente
+            const gradient = ctx.createLinearGradient(x, y, x + width, y + height);
+            gradient.addColorStop(0, char.color);
+            gradient.addColorStop(1, '#333');
+            
+            // Desenha corpo
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, y, width, height);
+            
+            // Cabeça
+            ctx.fillStyle = '#ffdbac';
+            ctx.beginPath();
+            ctx.arc(x + width/2, y - 15, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Olhos
+            ctx.fillStyle = '#000';
+            ctx.beginPath();
+            ctx.arc(x + width/2 - 8, y - 20, 3, 0, Math.PI * 2);
+            ctx.arc(x + width/2 + 8, y - 20, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Efeito de ataque
+            if (char.isAttacking) {
+                ctx.strokeStyle = '#ffff00';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(x + width, y + height/2);
+                ctx.lineTo(x + width + 30, y + height/2 - 15);
+                ctx.stroke();
+                
+                char.attackTimer--;
+                if (char.attackTimer <= 0) {
+                    char.isAttacking = false;
+                }
+            }
+            
+            // Nome do personagem
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 14px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(char.name, x + width/2, y - 30);
+            
+            // Barra de vida pequena
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(x, y - 40, width * (char.health/char.maxHealth), 5);
+        }
+
+        // Desenhar cenário 3D
+        function drawScene() {
+            // Chão com gradiente 3D
+            const groundGradient = ctx.createLinearGradient(0, canvas.height - 50, 0, canvas.height);
+            groundGradient.addColorStop(0, '#444');
+            groundGradient.addColorStop(1, '#222');
+            
+            ctx.fillStyle = groundGradient;
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+            
+            // Linhas de perspectiva
+            ctx.strokeStyle = '#666';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 5; i++) {
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height - 50 - i * 20);
+                ctx.lineTo(canvas.width, canvas.height - 50 - i * 20);
+                ctx.strokeStyle = `rgba(255,255,255,${0.1 - i*0.02})`;
+                ctx.stroke();
+            }
+        }
+
+        // Atualizar lógica do jogo
+        function update() {
+            if (!gameRunning) return;
+
+            // Movimento do jogador 1
+            if (controls.left && player1.x > 50) player1.x -= 3;
+            if (controls.right && player1.x < 250) player1.x += 3;
+            
+            // Movimento do jogador 2 (IA simples)
+            if (player2.health > 0 && player1.health > 0) {
+                if (player2.x < player1.x) player2.x += 1;
+                if (player2.x > player1.x) player2.x -= 1;
+                
+                // IA ataca quando perto
+                if (Math.abs(player2.x - player1.x) < 80 && !player2.isAttacking) {
+                    attack(player2, player1, player2.attack);
+                }
+            }
+
+            // Ataques do jogador 1
+            if (controls.punch && !player1.isAttacking) {
+                attack(player1, player2, player1.attack);
+            }
+            
+            if (controls.kick && !player1.isAttacking) {
+                attack(player1, player2, player1.attack * 1.5);
+            }
+            
+            if (controls.special && !player1.isAttacking) {
+                attack(player1, player2, player1.special);
+            }
+
+            // Atualizar status
+            document.getElementById('game-status').textContent = gameStatus;
+        }
+
+        // Loop de renderização
+        function render() {
+            // Limpa canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Desenha cenário
+            drawScene();
+            
+            // Desenha personagens
+            drawCharacter(player1, true);
+            drawCharacter(player2, false);
+            
+            // Efeitos visuais
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            requestAnimationFrame(render);
+        }
+
+        // Game loop
+        function gameLoop() {
+            update();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Iniciar jogo
+        function init() {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+            
+            // Ajusta posições iniciais
+            player1.x = 150;
+            player2.x = 350;
+            
+            // Inicia loops
+            render();
+            gameLoop();
+        }
+
+        // Ajusta canvas quando redimensionar
+        window.addEventListener('resize', () => {
+            canvas.width = canvas.clientWidth;
+            canvas.height = canvas.clientHeight;
+        });
+
+        // Inicializa
+        init();
+
+        // Previne scroll em dispositivos móveis
+        document.body.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        // Controles adicionais para prevenir comportamentos padrão
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('touchstart', (e) => e.preventDefault());
+            btn.addEventListener('touchend', (e) => e.preventDefault());
+        });
+    </script>
+</body>
+</html>
